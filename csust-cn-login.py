@@ -57,9 +57,8 @@ def SplitWlanParams(location):
 
 def InputLoginData(accountFile):
     if accountFile == "":
-        while True:
-            userAccount = input("输入登录用户名：")
-            userPasswd = input("输入密码：")
+        userAccount = input("输入登录用户名：")
+        userPasswd = input("输入密码：")
     else:
         with open(accountFile, "r", encoding="utf-8") as f:
             account = json.load(f)
