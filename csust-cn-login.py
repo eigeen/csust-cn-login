@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# script version: 1.0.0
+# script version: 1.0.1
 
 import requests
 import re
 import sys
 import json
-from retrying import retry
+import configparser
+# from retrying import retry
 from time import sleep
 
 
@@ -55,16 +56,16 @@ def SplitWlanParams(location):
     return dict
 
 
-def InputLoginData(accountFile):
-    if accountFile == "":
+def InputLoginData(configFile):
+    if configFile == "":
         userAccount = input("输入登录用户名：")
         userPasswd = input("输入密码：")
     else:
-        with open(accountFile, "r", encoding="utf-8") as f:
-            account = json.load(f)
-            userAccount = account['userName']
-            userPasswd = account['password']
-            print("用户名:", userAccount, "\n密码:", userPasswd)
+        cf = configparser.ConfigParser()
+        cf.read(configFile)
+        userAccount = cf.get("login", "user_name")
+        userPasswd = cf.get("login", "password")
+        print("用户名:", userAccount, "\n密码:", userPasswd)
     return userAccount, userPasswd
 
 
@@ -82,17 +83,16 @@ def BuildData(userAccount, userPasswd):
     return data
 
 
-def LoginPost(accountFile):
+def LoginPost(configFile):
     post_url = "http://192.168.7.221:801/eportal/"
     wlanParams = GetWlanParams()
-    userAccount, userPasswd = InputLoginData(accountFile)
+    userAccount, userPasswd = InputLoginData(configFile)
     data = BuildData(userAccount, userPasswd)
     respData = requests.post(post_url, headers=header, data=data, params=wlanParams,\
             allow_redirects=False, timeout=10)
     return respData
 
 
-@retry(stop_max_attempt_number=1)
 def GetResult(resultUrl):
     callBack = requests.get(resultUrl, headers=header, timeout=10)
     reStatus = re.findall(r'<title>(.*)</title>', callBack.text)
@@ -103,12 +103,12 @@ def GetResult(resultUrl):
         sleep(3)
 
 
-def Login(accountFile=""):
-    respData = LoginPost(accountFile)
+def Login(configFile=""):
+    respData = LoginPost(configFile)
     resultUrl = respData.headers['location']
     GetResult(resultUrl)
 
 
 if __name__ == "__main__":
-    Login()
+    Login("config.ini")
     print("*程序退出*")
